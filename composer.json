@@ -15,7 +15,7 @@
   "require-dev": {},
   "autoload": {
     "psr-4": {
-      "TeqFw\\Lib\\Db\\Repo3": "src"
+      "TeqFw\\Lib\\Db\\Repo3\\": "src"
     }
   }
 }
