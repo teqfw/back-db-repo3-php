@@ -14,20 +14,26 @@ use TeqFw\Lib\Db\Api\Dao\DataEntity;
 class Generic
     implements \TeqFw\Lib\Db\Api\Dao\Generic
 {
-    /** @var \TeqFw\Lib\Db\Api\Connection\Query */
+    /** @var \TeqFw\Lib\Db\Api\Connection\Schema */
     private $conn;
+    /** @var \TeqFw\Lib\Dem\Api\Helper\Util\Path */
+    private $hlpPath;
 
     public function __construct(
-        \TeqFw\Lib\Db\Api\Connection\Query $conn
+        \TeqFw\Lib\Db\Api\Connection\Schema $conn,
+        \TeqFw\Lib\Dem\Api\Helper\Util\Path $hlpPath
     ) {
         $this->conn = $conn;
+        $this->hlpPath = $hlpPath;
     }
 
-    public function create($entityName, $data)
+    public function create(\TeqFw\Lib\Db\Api\Dao\Entity $repo, $data)
     {
         assert($data instanceof \TeqFw\Lib\Data);
         $fields = (array)$data;
-        $this->conn->insert($entityName, $fields);
+        $entityPath = $repo->getEntityPath();
+        $table = $this->hlpPath->toName($entityPath);
+        $this->conn->insert($table, $fields);
         $result = $this->conn->lastInsertId();
         return $result;
     }
