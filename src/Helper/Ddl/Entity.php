@@ -7,6 +7,7 @@
 namespace TeqFw\Lib\Db\Repo3\Helper\Ddl;
 
 use Doctrine\DBAL\Types\Type as DoctrineType;
+use TeqFw\Lib\Dem\Api\Config as DemCfg;
 use TeqFw\Lib\Dem\Helper\Ddl\Config as DdlCfg;
 use TeqFw\Lib\Dem\Helper\Doctrine\Config as DoctrineCfg;
 use TeqFw\Lib\Dem\Helper\Parser\Config as ParserCfg;
@@ -14,11 +15,11 @@ use TeqFw\Lib\Dem\Helper\Parser\Config as ParserCfg;
 class Entity
     implements \TeqFw\Lib\Dem\Api\Helper\Ddl\Entity
 {
-    /** @var \TeqFw\Lib\Dem\Helper\Util\Path */
+    /** @var \TeqFw\Lib\Dem\Api\Helper\Util\Path */
     private $hlpPath;
 
     public function __construct(
-        \TeqFw\Lib\Dem\Helper\Util\Path $hlpPath
+        \TeqFw\Lib\Dem\Api\Helper\Util\Path $hlpPath
     ) {
         $this->hlpPath = $hlpPath;
     }
@@ -28,67 +29,37 @@ class Entity
         \Doctrine\DBAL\Schema\Table $entityTable,
         \TeqFw\Lib\Dem\Api\Data\Entity\Attr $attr
     ) {
-        $entityTableName = $entityTable->getName();
-        $tableName = $this->getNameForAttrTable($entityTableName, $attr);
-
-        /* create values table for attribute */
-        $table = $schema->createTable($tableName);
-        if ($attr->desc)
-            $table->addOption(DoctrineCfg::TBL_OPT_COMMENT, $attr->desc);
-        /* add reference to the entity */
-        $this->addColumnAttrRef($table);
-        /* add values column */
-        $this->addColumnAttrValue($table, $attr);
-        /* add foreign key (ref => id)*/
-        $table->addForeignKeyConstraint(
-            $entityTableName,
-            [DdlCfg::ATTR_REF],
-            [DdlCfg::ATTR_ID],
-            [
-                DoctrineCfg::FKEY_ON_DELETE => DoctrineCfg::FKEY_ACT_CASCADE,
-                DoctrineCfg::FKEY_ON_UPDATE => DoctrineCfg::FKEY_ACT_CASCADE
-            ]
-        );
+        $attrName = $this->hlpPath->normalizeAttribute($attr->name);
+        $isIdentity = ($attr->type == DemCfg::ATTR_TYPE_IDENTITY);
+        if ($isIdentity) {
+            /* add ID column */
+            $this->addColumnIdentity($attrName, $entityTable);
+        } else {
+            /* add regular column */
+            $opts = [];
+            /* analyze given options */
+            if ($attr->precision)
+                $opts[DoctrineCfg::COL_OPT_PRECISION] = $attr->precision;
+            if ($attr->scale)
+                $opts[DoctrineCfg::COL_OPT_SCALE] = $attr->scale;
+            /* map attribute type then add column to the table */
+            $typeName = $this->mapAttrTypeDemToDdl($attr->type);
+            $entityTable->addColumn($attrName, $typeName, $opts);
+        }
     }
 
-    private function addColumnAttrRef(
+    private function addColumnIdentity(
+        string $attrName,
         \Doctrine\DBAL\Schema\Table $table
     ) {
         $table->addColumn(
-            DdlCfg::ATTR_REF,
+            $attrName,
             \Doctrine\DBAL\Types\Type::INTEGER,
             [
                 DoctrineCfg::COL_OPT_UNSIGNED => true,
                 DoctrineCfg::COL_OPT_AUTOINCREMENT => true
             ]);
-        $table->setPrimaryKey([DdlCfg::ATTR_REF]);
-    }
-
-    private function addColumnAttrValue(
-        \Doctrine\DBAL\Schema\Table $table,
-        \TeqFw\Lib\Dem\Api\Data\Entity\Attr $attr
-    ) {
-        $demType = $attr->type;
-        $typeName = $this->mapAttrTypeDemToDdl($demType);
-        $opts = [];
-        if ($attr->precision)
-            $opts[DoctrineCfg::COL_OPT_PRECISION] = $attr->precision;
-        if ($attr->scale)
-            $opts[DoctrineCfg::COL_OPT_SCALE] = $attr->scale;
-        $table->addColumn(DdlCfg::ATTR_VALUE, $typeName, $opts);
-    }
-
-    private function addColumnEntityId(
-        \Doctrine\DBAL\Schema\Table $table
-    ) {
-        $table->addColumn(
-            DdlCfg::ATTR_ID,
-            \Doctrine\DBAL\Types\Type::INTEGER,
-            [
-                DoctrineCfg::COL_OPT_UNSIGNED => true,
-                DoctrineCfg::COL_OPT_AUTOINCREMENT => true
-            ]);
-        $table->setPrimaryKey([DdlCfg::ATTR_ID]);
+        $table->setPrimaryKey([$attrName]);
     }
 
     /**
@@ -102,10 +73,14 @@ class Entity
         \Doctrine\DBAL\Schema\Schema $schema,
         \TeqFw\Lib\Dem\Api\Data\Entity $entity
     ) {
-        /* create register table for entity */
+        /* create table */
         $tableName = $this->getNameForEntityTable($entity);
-        $table = $schema->createTable($tableName);
-        $this->addColumnEntityId($table);
+        $hasTable = $schema->hasTable($tableName);
+        if ($hasTable) {
+            $table = $schema->getTable($tableName);
+        } else {
+            $table = $schema->createTable($tableName);
+        }
         if ($entity->desc)
             $table->addOption(DoctrineCfg::TBL_OPT_COMMENT, $entity->desc);
 
@@ -131,7 +106,7 @@ class Entity
     {
         $ns = $entity->namespace ?? '';
         $name = $entity->name;
-        $fullName = "$ns/" . DdlCfg::DIV_ENTITY . "/$name";
+        $fullName = $this->hlpPath->normalizeRoot($name, $ns);
         $result = $this->hlpPath->toName($fullName);
         return $result;
     }
