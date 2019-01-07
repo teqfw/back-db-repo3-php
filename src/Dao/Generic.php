@@ -27,15 +27,36 @@ class Generic
         $this->hlpPath = $hlpPath;
     }
 
-    public function create(\TeqFw\Lib\Db\Api\Dao\Entity $repo, $data)
+    public function create(\TeqFw\Lib\Db\Api\Dao\Entity $dao, $data)
     {
         assert($data instanceof \TeqFw\Lib\Data);
         $fields = (array)$data;
-        $entityPath = $repo->getEntityPath();
+        $entityPath = $dao->getEntityPath();
         $table = $this->hlpPath->toName($entityPath);
         $this->conn->insert($table, $fields);
         $result = $this->conn->lastInsertId();
         return $result;
     }
+
+    public function getSet(
+        \TeqFw\Lib\Db\Api\Dao\Entity $dao,
+        $where = null,
+        $bind = null,
+        $order = null,
+        $limit = null,
+        $offset = null
+    ) {
+        $entityPath = $dao->getEntityPath();
+        $table = $this->hlpPath->toName($entityPath);
+
+        $query = "SELECT * FROM $table WHERE 1";
+        /* execute query */
+        /** @var \Doctrine\DBAL\Driver\PDOStatement $statement */
+        $statement = $this->conn->executeQuery($query);
+        $class = $dao->getEntityClass();
+        $result = $statement->fetchAll(\Doctrine\DBAL\FetchMode::CUSTOM_OBJECT, $class);
+        return $result;
+    }
+
 
 }
