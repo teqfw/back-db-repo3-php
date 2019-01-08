@@ -10,7 +10,6 @@
     }
   ],
   "require": {
-    "php": "^7.1",
     "teqfw/back-dem-php": "dev-master"
   },
   "require-dev": {},
