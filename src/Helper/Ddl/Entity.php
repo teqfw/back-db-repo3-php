@@ -15,6 +15,8 @@ use TeqFw\Lib\Dem\Helper\Parser\Config as ParserCfg;
 class Entity
     implements \TeqFw\Lib\Dem\Api\Helper\Ddl\Entity
 {
+    const STATUS='status';
+
     /** @var \TeqFw\Lib\Dem\Api\Helper\Util\Path */
     private $hlpPath;
 
@@ -22,6 +24,21 @@ class Entity
         \TeqFw\Lib\Dem\Api\Helper\Util\Path $hlpPath
     ) {
         $this->hlpPath = $hlpPath;
+    }
+
+    private function addRelation(
+        \Doctrine\DBAL\Schema\Schema $schema,
+        \Doctrine\DBAL\Schema\Table $entityTable,
+        \TeqFw\Lib\Dem\Api\Data\Entity\Relation $relation
+    ) {
+        $foreignTableName = $this->hlpPath->toName($relation->pathToForeign);
+        $localCols = $relation->ownAttrs;
+        $foreignCols = $relation->foreignAttrs;
+        $opts = [
+            'onDelete' => $relation->onDelete,
+            'onUpdate' => $relation->onUpdate
+        ];
+        $entityTable->addForeignKeyConstraint($foreignTableName, $localCols, $foreignCols, $opts);
     }
 
     private function addAttribute(
@@ -88,6 +105,12 @@ class Entity
         $attrs = $entity->attrs;
         foreach ($attrs as $attr) {
             $this->addAttribute($schema, $table, $attr);
+        }
+
+        /* create relations (foreign keys) */
+        $relations = $entity->relations;
+        foreach ($relations as $rel) {
+            $this->addRelation($schema, $table, $rel);
         }
 
         return $schema;
