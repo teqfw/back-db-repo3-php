@@ -59,6 +59,8 @@ class Entity
                 $opts[DoctrineCfg::COL_OPT_PRECISION] = $attr->precision;
             if ($attr->scale)
                 $opts[DoctrineCfg::COL_OPT_SCALE] = $attr->scale;
+            if ($attr->type == ParserCfg::ATTR_TYPE_REFERENCE)
+                $opts[DoctrineCfg::COL_OPT_UNSIGNED] = true;
             /* map attribute type then add column to the table */
             $typeName = $this->mapAttrTypeDemToDdl($attr->type);
             $entityTable->addColumn($attrName, $typeName, $opts);
@@ -129,7 +131,9 @@ class Entity
     {
         $ns = $entity->namespace ?? '';
         $name = $entity->name;
-        $fullName = $this->hlpPath->normalizeRoot($name, $ns);
+        $fullName = $entity->path;
+        if (!$fullName)
+            $fullName = $this->hlpPath->normalizeRoot($name, $ns);
         $result = $this->hlpPath->toName($fullName);
         return $result;
     }
@@ -165,8 +169,14 @@ class Entity
             case ParserCfg::ATTR_TYPE_INTEGER:
                 $result = DoctrineType::INTEGER;
                 break;
-            case ParserCfg::ATTR_TYPE_NUMERIC:
+            case ParserCfg::ATTR_TYPE_DECIMAL:
                 $result = DoctrineType::DECIMAL;
+                break;
+            case ParserCfg::ATTR_TYPE_REFERENCE:
+                $result = DoctrineType::INTEGER;
+                break;
+            case ParserCfg::ATTR_TYPE_STRING:
+                $result = DoctrineType::STRING;
                 break;
             case ParserCfg::ATTR_TYPE_TEXT:
                 $result = DoctrineType::STRING;
