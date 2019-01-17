@@ -8,6 +8,7 @@ namespace TeqFw\Lib\Db\Repo3\Helper\Ddl;
 
 use Doctrine\DBAL\Types\Type as DoctrineType;
 use TeqFw\Lib\Dem\Api\Config as DemCfg;
+use TeqFw\Lib\Dem\Api\Data\Entity\Index as EntityIndex;
 use TeqFw\Lib\Dem\Helper\Ddl\Config as DdlCfg;
 use TeqFw\Lib\Dem\Helper\Doctrine\Config as DoctrineCfg;
 use TeqFw\Lib\Dem\Helper\Parser\Config as ParserCfg;
@@ -66,6 +67,25 @@ class Entity
         $table->setPrimaryKey([$attrName]);
     }
 
+    private function addIndex(
+        \Doctrine\DBAL\Schema\Schema $schema,
+        \Doctrine\DBAL\Schema\Table $entityTable,
+        \TeqFw\Lib\Dem\Api\Data\Entity\Index $index
+    ) {
+        switch ($index->type) {
+            case EntityIndex::TYPE_PRIMARY:
+                $entityTable->setPrimaryKey($index->attrs);
+                break;
+            case EntityIndex::TYPE_UNIQUE:
+                $entityTable->addUniqueIndex($index->attrs);
+                break;
+            default:
+                $entityTable->setPrimaryKey($index->attrs);
+                break;
+
+        }
+    }
+
     private function addRelation(
         \Doctrine\DBAL\Schema\Schema $schema,
         \Doctrine\DBAL\Schema\Table $entityTable,
@@ -103,6 +123,12 @@ class Entity
             if (!$table->hasColumn($attrName)) {
                 $this->addAttribute($schema, $table, $attr);
             }
+        }
+
+        /* create indexes */
+        $indexes = $entity->indexes;
+        foreach ($indexes as $ndx) {
+            $this->addIndex($schema, $table, $ndx);
         }
 
         /* create relations (foreign keys) */
