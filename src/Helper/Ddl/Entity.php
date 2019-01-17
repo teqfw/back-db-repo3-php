@@ -26,21 +26,6 @@ class Entity
         $this->hlpPath = $hlpPath;
     }
 
-    private function addRelation(
-        \Doctrine\DBAL\Schema\Schema $schema,
-        \Doctrine\DBAL\Schema\Table $entityTable,
-        \TeqFw\Lib\Dem\Api\Data\Entity\Relation $relation
-    ) {
-        $foreignTableName = $this->hlpPath->toName($relation->pathToForeign);
-        $localCols = $relation->ownAttrs;
-        $foreignCols = $relation->foreignAttrs;
-        $opts = [
-            'onDelete' => $relation->onDelete,
-            'onUpdate' => $relation->onUpdate
-        ];
-        $entityTable->addForeignKeyConstraint($foreignTableName, $localCols, $foreignCols, $opts);
-    }
-
     private function addAttribute(
         \Doctrine\DBAL\Schema\Schema $schema,
         \Doctrine\DBAL\Schema\Table $entityTable,
@@ -81,13 +66,21 @@ class Entity
         $table->setPrimaryKey([$attrName]);
     }
 
-    /**
-     * Create entity table and attributes tables.
-     *
-     * @param \Doctrine\DBAL\Schema\Schema $schema
-     * @param \TeqFw\Lib\Dem\Api\Data\Entity $entity
-     * @return \Doctrine\DBAL\Schema\Schema
-     */
+    private function addRelation(
+        \Doctrine\DBAL\Schema\Schema $schema,
+        \Doctrine\DBAL\Schema\Table $entityTable,
+        \TeqFw\Lib\Dem\Api\Data\Entity\Relation $relation
+    ) {
+        $foreignTableName = $this->hlpPath->toName($relation->pathToForeign);
+        $localCols = $relation->ownAttrs;
+        $foreignCols = $relation->foreignAttrs;
+        $opts = [
+            'onDelete' => $relation->onDelete,
+            'onUpdate' => $relation->onUpdate
+        ];
+        $entityTable->addForeignKeyConstraint($foreignTableName, $localCols, $foreignCols, $opts);
+    }
+
     public function create(
         \Doctrine\DBAL\Schema\Schema $schema,
         \TeqFw\Lib\Dem\Api\Data\Entity $entity
@@ -103,10 +96,13 @@ class Entity
         if ($entity->desc)
             $table->addOption(DoctrineCfg::TBL_OPT_COMMENT, $entity->desc);
 
-        /* create attributes tables */
+        /* create attributes */
         $attrs = $entity->attrs;
         foreach ($attrs as $attr) {
-            $this->addAttribute($schema, $table, $attr);
+            $attrName = $attr->name;
+            if (!$table->hasColumn($attrName)) {
+                $this->addAttribute($schema, $table, $attr);
+            }
         }
 
         /* create relations (foreign keys) */
