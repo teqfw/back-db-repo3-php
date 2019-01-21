@@ -41,6 +41,10 @@ class Entity
             /* add regular column */
             $opts = [];
             /* analyze given options */
+            if (!is_null($attr->default))
+                $opts[DoctrineCfg::COL_OPT_DEFAULT] = $attr->default;
+            if ($attr->precision)
+                $opts[DoctrineCfg::COL_OPT_PRECISION] = $attr->precision;
             if ($attr->precision)
                 $opts[DoctrineCfg::COL_OPT_PRECISION] = $attr->precision;
             if ($attr->scale)
