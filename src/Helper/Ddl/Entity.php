@@ -43,6 +43,8 @@ class Entity
             /* analyze given options */
             if (!is_null($attr->default))
                 $opts[DoctrineCfg::COL_OPT_DEFAULT] = $attr->default;
+            if (!is_null($attr->not_null))
+                $opts[DoctrineCfg::COL_OPT_NOTNULL] = $attr->not_null;
             if ($attr->precision)
                 $opts[DoctrineCfg::COL_OPT_PRECISION] = $attr->precision;
             if ($attr->precision)
