@@ -86,7 +86,7 @@ class Entity
                 $entityTable->addUniqueIndex($index->attrs);
                 break;
             default:
-                $entityTable->setPrimaryKey($index->attrs);
+                $entityTable->addIndex($index->attrs);
                 break;
 
         }
