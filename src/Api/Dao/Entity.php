@@ -107,25 +107,25 @@ class Entity
         return $result;
     }
 
-    public function getOne($pk)
+    public function getOne($key)
     {
         $result = null;
-        if (is_array($pk)) {
+        if (is_array($key)) {
             /* probably this is complex PK */
-            $pk = $pk;
+            $key = $key;
         } else {
             $idFieldName = $this->getPkFirstAttr();
-            $pk = [$idFieldName => $pk];
+            $key = [$idFieldName => $key];
         }
         $tbl = $this->getTableName();
         /* selection query */
         $conn = $this->connQuery->getConnection();
         $query = $conn->select();
         $query->from($tbl);
-        foreach (array_keys($pk) as $field) {
+        foreach (array_keys($key) as $field) {
             $query->where("`$field`=:$field");
         }
-        $found = $conn->fetchRow($query, $pk);
+        $found = $conn->fetchRow($query, $key);
         if ($found) {
             $result = $this->composeEntity($found);
         }
@@ -164,6 +164,11 @@ class Entity
             }
         }
         return $result;
+    }
+
+    public function getPrimaryKey(): array
+    {
+        // TODO: Implement getPrimaryKey() method.
     }
 
     public function getSet(

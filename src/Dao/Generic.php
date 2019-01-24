@@ -14,6 +14,14 @@ use TeqFw\Lib\Db\Api\Dao\DataEntity;
 class Generic
     implements \TeqFw\Lib\Db\Api\Dao\Generic
 {
+    /**
+     * Alias for main table.
+     *
+     * @var string
+     */
+    public const AS = 'entity';
+    private const SELECT_ALL = '*';
+
     /** @var \TeqFw\Lib\Db\Api\Connection\Schema */
     private $conn;
     /** @var \TeqFw\Lib\Dem\Api\Helper\Util\Path */
@@ -38,6 +46,45 @@ class Generic
         return $result;
     }
 
+    public function getOne(
+        \TeqFw\Lib\Db\Api\Dao\Entity $dao,
+        $key)
+    {
+        $result = null;
+        /* compose filter parameters */
+        $bind = [];
+        if (is_array($key)) {
+            $bind = $key;
+        } else {
+            /* get the first attribute from the key (probably, the one) */
+            $pkey = $dao->getPrimaryKey();
+            $first = reset($pkey);
+            $bind[$first] = $key;
+        }
+        /* get entity config */
+        $entityPath = $dao->getEntityPath();
+        $table = $this->hlpPath->toName($entityPath);
+        /* compose query */
+        $qb = $this->conn->createQueryBuilder();
+        $qb->select(self::SELECT_ALL);
+        $qb->from($table, self::AS);
+        foreach ($bind as $attr => $value) {
+            $qb->andWhere("$attr=:$attr");
+        }
+        $qb->setParameters($bind);
+        $sql = $qb->getSQL();
+        /* execute query */
+        $stmt = $qb->execute();
+        $all = $stmt->fetchAll(
+            \Doctrine\DBAL\FetchMode::CUSTOM_OBJECT,
+            $dao->getEntityClass()
+        );
+        if (count($all) == 1) {
+            $result = reset($all);
+        }
+        return $result;
+    }
+
     public function getSet(
         \TeqFw\Lib\Db\Api\Dao\Entity $dao,
         $where = null,
@@ -49,14 +96,18 @@ class Generic
         $entityPath = $dao->getEntityPath();
         $table = $this->hlpPath->toName($entityPath);
 
-        $query = "SELECT * FROM $table WHERE 1";
+        $qb = $this->conn->createQueryBuilder();
+        $qb->select(self::SELECT_ALL);
+        $qb->from($table, self::AS);
+        $qb->where($where);
+        $qb->setParameters($bind);
+        $sql = $qb->getSQL();
         /* execute query */
-        /** @var \Doctrine\DBAL\Driver\PDOStatement $statement */
-        $statement = $this->conn->executeQuery($query);
-        $class = $dao->getEntityClass();
-        $result = $statement->fetchAll(\Doctrine\DBAL\FetchMode::CUSTOM_OBJECT, $class);
+        $stmt = $qb->execute();
+        $result = $stmt->fetchAll(
+            \Doctrine\DBAL\FetchMode::CUSTOM_OBJECT,
+            $dao->getEntityClass()
+        );
         return $result;
     }
-
-
 }
