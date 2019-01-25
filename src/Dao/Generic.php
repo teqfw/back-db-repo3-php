@@ -99,8 +99,10 @@ class Generic
         $qb = $this->conn->createQueryBuilder();
         $qb->select(self::SELECT_ALL);
         $qb->from($table, self::AS);
-        $qb->where($where);
-        $qb->setParameters($bind);
+        if ($where)
+            $qb->where($where);
+        if ($bind)
+            $qb->setParameters($bind);
         $sql = $qb->getSQL();
         /* execute query */
         $stmt = $qb->execute();
