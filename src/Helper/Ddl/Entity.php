@@ -49,6 +49,8 @@ class Entity
                 $opts[DoctrineCfg::COL_OPT_PRECISION] = $attr->precision;
             if ($attr->scale)
                 $opts[DoctrineCfg::COL_OPT_SCALE] = $attr->scale;
+            if ($attr->length)
+                $opts[DoctrineCfg::COL_OPT_LENGTH] = $attr->length;
             if (
                 ($attr->unsigned) ||
                 ($attr->type == ParserCfg::ATTR_TYPE_REFERENCE)
