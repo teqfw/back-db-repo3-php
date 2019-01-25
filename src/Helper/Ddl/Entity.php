@@ -47,14 +47,15 @@ class Entity
                 $opts[DoctrineCfg::COL_OPT_NOTNULL] = !$attr->nullable;
             if ($attr->precision)
                 $opts[DoctrineCfg::COL_OPT_PRECISION] = $attr->precision;
-            if ($attr->precision)
-                $opts[DoctrineCfg::COL_OPT_PRECISION] = $attr->precision;
             if ($attr->scale)
                 $opts[DoctrineCfg::COL_OPT_SCALE] = $attr->scale;
-            if ($attr->type == ParserCfg::ATTR_TYPE_REFERENCE)
+            if (
+                ($attr->unsigned) ||
+                ($attr->type == ParserCfg::ATTR_TYPE_REFERENCE)
+            )
                 $opts[DoctrineCfg::COL_OPT_UNSIGNED] = true;
             /* map attribute type then add column to the table */
-            $typeName = $this->mapAttrTypeDemToDdl($attr->type);
+            $typeName = $this->mapAttrTypeDemToDdl($attr);
             $entityTable->addColumn($attrName, $typeName, $opts);
         }
     }
@@ -178,13 +179,15 @@ class Entity
     /**
      * Convert DEM attribute type to Doctrine column type.
      *
-     * @param string $demType
+     * @param \TeqFw\Lib\Dem\Api\Data\Entity\Attr $attr
      * @return string
      */
-    private function mapAttrTypeDemToDdl($demType)
+    private function mapAttrTypeDemToDdl($attr)
     {
         $result = null;
-        switch ($demType) {
+        $type = $attr->type;
+        $isSmall = $attr->small;
+        switch ($type) {
             case ParserCfg::ATTR_TYPE_BINARY:
                 $result = DoctrineType::BINARY;
                 break;
@@ -195,7 +198,7 @@ class Entity
                 $result = DoctrineType::DATETIME_IMMUTABLE;
                 break;
             case ParserCfg::ATTR_TYPE_INTEGER:
-                $result = DoctrineType::INTEGER;
+                $result = ($isSmall) ? DoctrineType::SMALLINT : DoctrineType::INTEGER;
                 break;
             case ParserCfg::ATTR_TYPE_DECIMAL:
                 $result = DoctrineType::DECIMAL;
