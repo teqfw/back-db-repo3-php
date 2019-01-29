@@ -196,6 +196,9 @@ class Entity
             case ParserCfg::ATTR_TYPE_BOOLEAN:
                 $result = DoctrineType::BOOLEAN;
                 break;
+            case ParserCfg::ATTR_TYPE_DATE:
+                $result = DoctrineType::DATE;
+                break;
             case ParserCfg::ATTR_TYPE_DATETIME:
                 $result = DoctrineType::DATETIME_IMMUTABLE;
                 break;
