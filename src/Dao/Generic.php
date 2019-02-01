@@ -22,13 +22,13 @@ class Generic
     public const AS = 'entity';
     private const SELECT_ALL = '*';
 
-    /** @var \TeqFw\Lib\Db\Api\Connection\Schema */
+    /** @var \TeqFw\Lib\Db\Api\Connection\Main */
     private $conn;
     /** @var \TeqFw\Lib\Dem\Api\Helper\Util\Path */
     private $hlpPath;
 
     public function __construct(
-        \TeqFw\Lib\Db\Api\Connection\Schema $conn,
+        \TeqFw\Lib\Db\Api\Connection\Main $conn,
         \TeqFw\Lib\Dem\Api\Helper\Util\Path $hlpPath
     ) {
         $this->conn = $conn;

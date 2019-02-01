@@ -23,12 +23,12 @@ class Entity
 
     /** @var \TeqFw\Lib\Db\Api\Connection\Query */
     private $connQuery;
-    /** @var \TeqFw\Lib\Db\Api\Connection\Schema */
+    /** @var \TeqFw\Lib\Db\Api\Connection\Main */
     private $connSchema;
 
     public function __construct(
         \TeqFw\Lib\Db\Api\Connection\Query $connQuery,
-        \TeqFw\Lib\Db\Api\Connection\Schema $connSchema
+        \TeqFw\Lib\Db\Api\Connection\Main $connSchema
     ) {
         $this->connQuery = $connQuery;
         $this->connSchema = $connSchema;
